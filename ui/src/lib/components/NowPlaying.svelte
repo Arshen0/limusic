@@ -94,6 +94,27 @@
 	let big = $state(false);
 	/** The picture's box, for the ambient light to glow around. */
 	let picBox = $state<HTMLElement | null>(null);
+
+	// Dedicated fullscreen control for the video. Fullscreen the picture container so it works
+	// with both the HTML video element and the native mpv video hole.
+	let videoFullscreen = $state(false);
+	async function toggleVideoFullscreen() {
+		if (!picBox || !showVideo()) return;
+		try {
+			if (document.fullscreenElement) {
+				await document.exitFullscreen();
+			} else {
+				await picBox.requestFullscreen();
+			}
+		} catch (error) {
+			console.error('Could not toggle video fullscreen:', error);
+		}
+	}
+	$effect(() => {
+		const update = () => (videoFullscreen = document.fullscreenElement === picBox);
+		document.addEventListener('fullscreenchange', update);
+		return () => document.removeEventListener('fullscreenchange', update);
+	});
 	$effect(() => {
 		if (np.tab !== 'lyrics') big = false; // nothing to enlarge on the queue tab
 	});
@@ -558,6 +579,25 @@
 							{/if}
 							{#if volFlash}{@render volPlate()}{/if}
 							{@render picture()}
+						{#if showVideo()}
+							<button
+								type="button"
+								onclick={(e) => {
+									e.stopPropagation();
+									void toggleVideoFullscreen();
+								}}
+								aria-label={videoFullscreen ? 'Exit video fullscreen' : 'Enter video fullscreen'}
+								title={videoFullscreen ? 'Exit fullscreen (Esc)' : 'Fullscreen video'}
+								class="absolute right-3 top-3 z-20 rounded-lg bg-black/65 p-2 text-white shadow transition hover:bg-black/85 focus-visible:outline-2 focus-visible:outline-white"
+							>
+								<HugeiconsIcon
+									icon={Maximize01Icon}
+									altIcon={Minimize01Icon}
+									showAlt={videoFullscreen}
+									class="h-5 w-5"
+								/>
+							</button>
+						{/if}
 						</div>
 
 						<!-- What's playing. Title, artists, album: three steps of size and colour, so
@@ -695,6 +735,25 @@
 					>
 						{#if volFlash}{@render volPlate()}{/if}
 						{@render picture()}
+						{#if showVideo()}
+							<button
+								type="button"
+								onclick={(e) => {
+									e.stopPropagation();
+									void toggleVideoFullscreen();
+								}}
+								aria-label={videoFullscreen ? 'Exit video fullscreen' : 'Enter video fullscreen'}
+								title={videoFullscreen ? 'Exit fullscreen (Esc)' : 'Fullscreen video'}
+								class="absolute right-3 top-3 z-20 rounded-lg bg-black/65 p-2 text-white shadow transition hover:bg-black/85 focus-visible:outline-2 focus-visible:outline-white"
+							>
+								<HugeiconsIcon
+									icon={Maximize01Icon}
+									altIcon={Minimize01Icon}
+									showAlt={videoFullscreen}
+									class="h-5 w-5"
+								/>
+							</button>
+						{/if}
 						{#if canSwitch()}
 							<!-- Both directions, or there is no way back to the video. On a plate, since
 							     it sits over whatever frame happens to be showing. -->
